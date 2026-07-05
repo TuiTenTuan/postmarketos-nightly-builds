@@ -25,13 +25,16 @@ jobs:
 
       - name: Install pmbootstrap from git
         run: |
+          set -euo pipefail
           git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
           mkdir -p ~/.local/bin
-          ln -s "$PWD/pmbootstrap/pmbootstrap.py" ~/.local/bin/pmbootstrap
+          ln -sf "$PWD/pmbootstrap/pmbootstrap.py" ~/.local/bin/pmbootstrap
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           pmbootstrap --version
 
       - name: Set up pmaports
         run: |
+          set -euo pipefail
           echo -e '\n\nedge\nfairphone\nfp4\n\n\nphosh\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' | pmbootstrap init || true
           cd ~/.local/var/pmbootstrap/cache_git/pmaports
           if git remote get-url sm8150 >/dev/null 2>&1; then
@@ -39,15 +42,24 @@ jobs:
           else
             git remote add sm8150 https://github.com/sm8150-linux-mainline/pmaports.git
           fi
-          DEFAULT_BRANCH=$(git remote show sm8150 | awk '/HEAD branch/ {print $NF}')
-          git fetch sm8150 $DEFAULT_BRANCH
-          #git reset --hard sm8150/$DEFAULT_BRANCH
-          git checkout sm8150/$DEFAULT_BRANCH -- main/adbd-linux
+          DEFAULT_BRANCH=$(git ls-remote --symref sm8150 HEAD | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2}')
+          DEFAULT_BRANCH=${DEFAULT_BRANCH:-next}
+          git fetch --depth=1 sm8150 "$DEFAULT_BRANCH"
+          if git cat-file -e "sm8150/$DEFAULT_BRANCH:main/adbd-linux/APKBUILD" 2>/dev/null; then
+            git checkout "sm8150/$DEFAULT_BRANCH" -- main/adbd-linux
+          else
+            git fetch --depth=1 sm8150 next
+            git checkout sm8150/next -- main/adbd-linux
+          fi
 
       - name: Check kernel branch
         if: matrix.version == 'default'
         run: |
-          DEFAULT_BRANCH=$(curl -s  https://api.github.com/repos/sm8150-mainline/linux | jq -r '.default_branch')
+          set -euo pipefail
+          DEFAULT_BRANCH=$(curl -fsSL https://api.github.com/repos/sm8150-mainline/linux | jq -r '.default_branch // empty')
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            DEFAULT_BRANCH="${KERNEL_BRANCH}"
+          fi
           echo "Default branch is $DEFAULT_BRANCH"
           echo "KERNEL_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
 
