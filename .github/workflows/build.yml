@@ -34,65 +34,69 @@ jobs:
         run: |
           echo -e '\n\nedge\nfairphone\nfp4\n\n\nphosh\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' | pmbootstrap init || true
           cd ~/.local/var/pmbootstrap/cache_git/pmaports
-          git remote add 99degree https://github.com/99degree/pmaports.git
-          DEFAULT_BRANCH=$(git remote show sm7125 | awk '/HEAD branch/ {print $NF}')
-          git fetch 99degree $DEFAULT_BRANCH
-          #git reset --hard 99degree/$DEFAULT_BRANCH
-          git checkout 99degree/next -- main/adbd-linux
+          if git remote get-url sm8150 >/dev/null 2>&1; then
+            git remote set-url sm8150 https://github.com/sm8150-linux-mainline/pmaports.git
+          else
+            git remote add sm8150 https://github.com/sm8150-linux-mainline/pmaports.git
+          fi
+          DEFAULT_BRANCH=$(git remote show sm8150 | awk '/HEAD branch/ {print $NF}')
+          git fetch sm8150 $DEFAULT_BRANCH
+          #git reset --hard sm8150/$DEFAULT_BRANCH
+          git checkout sm8150/$DEFAULT_BRANCH -- main/adbd-linux
 
       - name: Check kernel branch
         if: matrix.version == 'default'
         run: |
-          DEFAULT_BRANCH=$(curl -s  https://api.github.com/repos/sm7125-mainline/linux | jq -r '.default_branch')
+          DEFAULT_BRANCH=$(curl -s  https://api.github.com/repos/sm8150-mainline/linux | jq -r '.default_branch')
           echo "Default branch is $DEFAULT_BRANCH"
           echo "KERNEL_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
 
       - name: Clone kernel sources
         run: |
-          #git clone https://github.com/sm7125-mainline/linux.git --single-branch --branch ${{ env.KERNEL_BRANCH }} --depth 1 ./linux
+          #git clone https://github.com/sm8150-mainline/linux.git --single-branch --branch ${{ env.KERNEL_BRANCH }} --depth 1 ./linux
 
-      - name: Choose any SM7125 device in pmbootstrap to build kernel
+      - name: Choose any SM8150 device in pmbootstrap to build kernel
         run: |
-          cp xiaomi-miatoll.cfg ~/.config/pmbootstrap_v3.cfg
+          cp xiaomi-raphael.cfg ~/.config/pmbootstrap_v3.cfg
 
       - name: Compile kernel with envkernel
         run: |
           #cd linux
           #shopt -s expand_aliases
           #source ../pmbootstrap/helpers/envkernel.sh
-          #make defconfig sm7125.config
+          #make defconfig sm8150.config
           #make -j$(nproc)
-          #pmbootstrap build --envkernel linux-postmarketos-qcom-sm7125
+          #pmbootstrap build --envkernel linux-postmarketos-qcom-sm8150
 
       - name: Create artifact directory
         run: |
           mkdir out
 
-      - name: Build xiaomi-curtana
+      - name: Build xiaomi-raphael
         run: |
-          cp xiaomi-miatoll.cfg ~/.config/pmbootstrap_v3.cfg
+          cp xiaomi-raphael.cfg ~/.config/pmbootstrap_v3.cfg
           pmbootstrap build adbd-linux
           pmbootstrap config extra_packages adbd-linux
           pmbootstrap install --password 147147 --split
           pmbootstrap export
           ls /tmp/postmarketOS-export/ -la
-          cp /tmp/postmarketOS-export/boot.img out/boot-xiaomi-tianma-miatoll.img
+          cp /tmp/postmarketOS-export/boot.img out/boot-xiaomi-raphael.img
 
           # for case without "--split", the resulting file is xiaomi.img
-          cp /tmp/postmarketOS-export/*miatoll*.img out/ || true
+          cp /tmp/postmarketOS-export/*raphael*.img out/ || true
 
           # for case with split, the result file is xiaomi-root.img
-          cp /tmp/postmarketOS-export/*miatoll-*.img out/ || true
+          cp /tmp/postmarketOS-export/*raphael-*.img out/ || true
           
           #sed -i 's/tianma/huaxing/g' ~/.config/pmbootstrap_v3.cfg
           #pmbootstrap export
-          #cp /tmp/postmarketOS-export/boot.img out/boot-xiaomi-huaxing-miatoll.img
-          #xz -T0 -9e -v out/xiaomi-miatoll*.img
+          #cp /tmp/postmarketOS-export/boot.img out/boot-xiaomi-huaxing-raphael.img
+          #xz -T0 -9e -v out/xiaomi-raphael*.img
           echo -e "n\nn\ny\n" | pmbootstrap zap
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xiaomi-curtana-${{ env.KERNEL_BRANCH }}
-          path: out/*-miatol*.img*
+          name: xiaomi-raphael-${{ env.KERNEL_BRANCH }}
+          path: out/*-raphael*.img*
           retention-days: 7
