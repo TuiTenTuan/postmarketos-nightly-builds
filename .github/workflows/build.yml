@@ -56,7 +56,7 @@ jobs:
         if: matrix.version == 'default'
         run: |
           set -euo pipefail
-          DEFAULT_BRANCH=$(curl -fsSL https://api.github.com/repos/sm8150-mainline/linux | jq -r '.default_branch // empty')
+          DEFAULT_BRANCH=$(curl -fsSL https://gitlab.postmarketos.org/api/v4/projects/soc%2Fqualcomm-sm8150%2Flinux | jq -r '.default_branch // empty')
           if [ -z "$DEFAULT_BRANCH" ]; then
             DEFAULT_BRANCH="${KERNEL_BRANCH}"
           fi
@@ -65,7 +65,7 @@ jobs:
 
       - name: Clone kernel sources
         run: |
-          #git clone https://github.com/sm8150-mainline/linux.git --single-branch --branch ${{ env.KERNEL_BRANCH }} --depth 1 ./linux
+          #git clone https://gitlab.postmarketos.org/soc/qualcomm-sm8150/linux.git --single-branch --branch ${{ env.KERNEL_BRANCH }} --depth 1 ./linux
 
       - name: Choose any SM8150 device in pmbootstrap to build kernel
         run: |
