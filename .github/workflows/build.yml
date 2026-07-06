@@ -45,11 +45,11 @@ jobs:
           DEFAULT_BRANCH=$(git ls-remote --symref sm8150 HEAD | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2}')
           DEFAULT_BRANCH=${DEFAULT_BRANCH:-next}
           git fetch --depth=1 sm8150 "$DEFAULT_BRANCH"
-          if git cat-file -e "sm8150/$DEFAULT_BRANCH:main/adbd-linux/APKBUILD" 2>/dev/null; then
-            git checkout "sm8150/$DEFAULT_BRANCH" -- main/adbd-linux
+          if git cat-file -e "sm8150/$DEFAULT_BRANCH:device/testing/device-xiaomi-raphael/APKBUILD" 2>/dev/null; then
+            git checkout "sm8150/$DEFAULT_BRANCH" -- device/testing/device-xiaomi-raphael
           elif git ls-remote --exit-code sm8150 next >/dev/null 2>&1; then
             git fetch --depth=1 sm8150 next
-            git checkout sm8150/next -- main/adbd-linux
+            git checkout sm8150/next -- device/testing/device-xiaomi-raphael
           fi
 
       - name: Check kernel branch
